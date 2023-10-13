@@ -1,26 +1,25 @@
-from fastapi import FastAPI
-import requests
+from flask import Flask, request, jsonify
+import os
 import vtracer
 
-app = FastAPI ()
+app = Flask(__name__)
 
-@app.get("/")
+def convert_image_to_svg(image_path, output_path, conversion_params):
+    # Convertir la imagen a SVG con los parámetros de configuración
+    vtracer.convert_image_to_svg_py(image_path, output_path, **conversion_params)
 
-def index ():
-    return
-import tkinter as tk
-from tkinter import filedialog
+    print(f"Imagen convertida a SVG. Archivo de salida: {output_path}")
 
+@app.route('/convert', methods=['POST'])
+def convert_image():
+    # Directorio donde se almacenarán las imágenes
+    upload_directory = 'uploads'
+    os.makedirs(upload_directory, exist_ok=True)
 
-def convert_image_to_svg():
-    # Solicitar al usuario que seleccione una imagen
-    filepath = filedialog.askopenfilename(title="Seleccionar imagen",
-                                          filetypes=[("Archivos de imagen", "*.png;*.jpg;*.jpeg;*.gif")])
-    if not filepath:
-        return  # El usuario canceló la selección
-
-    # Crear el nombre del archivo de salida (con extensión SVG)
-    output_filepath = filepath.rsplit('.', 1)[0] + ".svg"
+    # Recibir la imagen
+    image_file = request.files['image']
+    image_path = os.path.join(upload_directory, image_file.filename)
+    image_file.save(image_path)
 
     # Parámetros de configuración para la conversión
     conversion_params = {
@@ -37,18 +36,15 @@ def convert_image_to_svg():
         'path_precision': 3          # default: 8
     }
 
-    # Convertir la imagen a SVG con los parámetros de configuración
-    vtracer.convert_image_to_svg_py(filepath, output_filepath, **conversion_params)
+    # Nombre de archivo de salida (con extensión SVG)
+    output_filename = image_file.filename.rsplit('.', 1)[0] + ".svg"
+    output_path = os.path.join(upload_directory, output_filename)
 
-    print(f"Imagen convertida a SVG. Archivo de salida: {output_filepath}")
+    # Convertir la imagen a SVG
+    convert_image_to_svg(image_path, output_path, conversion_params)
 
-# Crear la ventana principal
-root = tk.Tk()
-root.title("Conversor de imagen a SVG")
+    return jsonify({"message": "Imagen convertida a SVG.", "svg_file": output_filename})
 
-# Botón para iniciar la conversión
-convert_button = tk.Button(root, text="Convertir a SVG", command=convert_image_to_svg)
-convert_button.pack(pady=20)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
 
-# Iniciar la interfaz gráfica
-root.mainloop()
