@@ -45,6 +45,9 @@ def convert_image():
 
     return jsonify({"message": "Imagen convertida a SVG.", "svg_file": output_filename})
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Utiliza el puerto proporcionado por Netlify, o 5000 si no está definido
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
 
